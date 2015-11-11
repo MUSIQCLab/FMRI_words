@@ -5,10 +5,10 @@ __author__ = 'Stella'
 def LassoClass():
 
     def __init__(self):
-	self.delta = 0.001
+	    self.delta = 0.001
 
     def set_delta(self,value):
-    self.delta = value
+        self.delta = value
 
 
     def efficient_cord_descent_w (y, X, l_reg, w_old = None, w_0 = None):
