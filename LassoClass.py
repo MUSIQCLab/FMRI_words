@@ -1,5 +1,6 @@
 __author__ = 'Stella'
 
+import numpy as np
 
 
 def LassoClass():
@@ -42,7 +43,7 @@ Checks for covergence between w_new and w_old
 '''
 def no_convergence(w_new,w_old):
     for i in range(0,w_new.shape[0]):
-        if math.fabs(w_new[i] - w_old[i]) > DELTA:
+        if math.fabs(w_new[i] - w_old[i]) > delta:
             return True
     return False
 
