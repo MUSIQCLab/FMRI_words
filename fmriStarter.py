@@ -6,7 +6,7 @@ from pylab import *
 from scipy import sparse
 import numpy as np
 
-def main():
+def run():
     dictionary = open("meta/dictionary.txt").read().splitlines()
     semantic_feature = open("meta/semantic_feature.txt").read().splitlines()
     fmri_train = io.mmread("subject1_fmri_std.train.mtx")
@@ -24,20 +24,27 @@ def main():
         index = wordid_train[i][0]
         ytrain [i] = wordfeature_std [index-1]
 
-    print
     # get each of the semantic features separatelly and run lasso on it
-    n = xtrain.shape[0]
-    print(n)
-    for i in range(n):
-        linit = lassoSolver.calculate_max_lambda (xtrain,ytrain[:,i])
-        print(i, ' ', linit)
+    num_features = ytrain.shape[1]
+    d = xtrain.shape[1]
+    n_data = xtrain.shape[0]
 
+    # only for the first question
+    bestw = np.zeros([num_features,d])
+    lasso = lassoSolver.LassoClass()
+    lambda_list = [0.4,0.35,0.3,0.25,0.2,0.1,0.05]
+    for i in range(num_features):
+      bestw[i,:] = lasso.descendingLambda (ytrain[:,0].reshape(n_data,1), xtrain, lambda_list)
+
+    return bestw
     #fmri_test = io.mmread("subject1_fmri_std.test.mtx") # sparse format
     #fmri_test_sparse = sparse.csc_matrix (fmri_test)# sparse format
     #wordid_test = io.mmread("subject1_wordid.test.mtx")
     #wordfeature_centered = io.mmread("word_feature_centered.mtx")
 
 
+def main():
+    print('hi')
 
 
 if __name__ == '__main__':

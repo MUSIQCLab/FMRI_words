@@ -1,51 +1,99 @@
 __author__ = 'Stella'
 
 import numpy as np
+import math
 
-
-def LassoClass():
-
+class LassoClass:
     def __init__(self):
-	    self.delta = 0.001
+        self.delta = 0.001
+        self.error_decrease_limit = 0.01
 
     def set_delta(self,value):
         self.delta = value
 
+    def set_error_decrease_limit (self,value):
+        self.error_decrease_limit = value
 
-    def efficient_cord_descent_w (y, X, l_reg, w_old = None, w_0 = None):
+
+    def descendingLambda (self,ytrain, xtrain, lambda_list, w_new = None, w_0 = 0.0):
+        d = xtrain.shape[1]
+
+        if (w_new == None):
+            w_new = np.zeros((d,1))
+
+        #l_reg = calculate_max_lambda (xtrain,ytrain)
+        error_decreases = True
+        previous_error = float("inf")
+        l_reg_list = []
+        RMSE_train = []
+        RMSE_valid = []
+        nonZeros_list = []
+        weights_list = []
+
+        for l_reg in lambda_list:
+            print("coordinate descent with lambda", l_reg, ' and using previous w')
+            (w_0,w_new,y_train_hat) = self.cordDescentLasso(np.copy(ytrain), xtrain, l_reg, w_new, w_0)
+            rmsetrain = root_mean_squared_error(ytrain, y_train_hat)
+            rmsevalid = rmsetrain # temporary place holder
+            #rmsevalid = root_mean_squared_error(y_validation,calculate_predicted_y(X_validation,w_new,w_0) )
+            nonZeros = np.count_nonzero(w_new)
+            nonZeros_list.append(nonZeros)
+            l_reg_list.append(l_reg)
+            RMSE_train.append(rmsetrain)
+
+            #RMSE_valid.append(rmsevalid)
+            weights_list.append(w_new)
+            print ("lambda : ", l_reg, "rmse validation ", rmsevalid, "rmse train : ", rmsetrain, " non Zeros : ", nonZeros)
+            l_reg = l_reg * self.lambda_ratio
+            error_decreases = (previous_error - rmsevalid) > self.error_decrease_limit
+            previous_error = rmsevalid
+
+        # find best lambda - smallest validation error
+        ind_best_l = np.argmin(RMSE_train) # TEMPORARY - WAS RMSE VALID
+        print(RMSE_train)
+        print(l_reg_list)
+        return (weights_list[ind_best_l])
+
+
+    def cordDescentLasso (self, y, x, l_reg, w_old , w_0):
         condition = True
-        d = X.shape[1]
-        a = 2 * np.sum(np.square(X.toarray()),axis=0)
-        print (delta)
-
-        if (w_old == None):
-            w_old = np.zeros(d)
-
-        if (w_0 == None):
-            w_0 = 0.0
+        d = x.shape[1]
+        a = 2 * np.sum(np.square(x.toarray()),axis=0)
 
         while condition:
             w_new = np.copy (w_old)
-            y_hat = X.dot(w_old) + w_0
+            y_hat = x.dot(w_old) + w_0
             w_0 = estimate_w0 (y_hat,y, w_0)
             y_hat = estimate_y (y, y_hat)
             for k in range(0,d):
-                w_new[k] = estimate_wk (k, y_hat, y, w_new, X, l_reg, a)
-                y_hat = estimate_y_from_w (k, y_hat, w_old, w_new, X)
-            condition = no_convergence(w_new,w_old)
+                w_new[k] = estimate_wk (k, y_hat, y, w_new, x, l_reg, a)
+                y_hat = estimate_y_from_w (k, y_hat, w_old, w_new, x)
+            condition = self.no_convergence(w_new,w_old)
             w_old = np.copy(w_new)
+
         return (w_0,w_new,y_hat)
 
+    '''
+    Checks for covergence between w_new and w_old
+    '''
+    def no_convergence(self,w_new,w_old):
+        for i in range(0,w_new.shape[0]):
+            if math.fabs(w_new[i] - w_old[i]) > self.delta:
+                return True
+        return False
 
 
 '''
-Checks for covergence between w_new and w_old
+Root mean squared error from y to y_prediction
 '''
-def no_convergence(w_new,w_old):
-    for i in range(0,w_new.shape[0]):
-        if math.fabs(w_new[i] - w_old[i]) > delta:
-            return True
-    return False
+def root_mean_squared_error (y_valid,y_predict):
+    diff = y_valid - y_predict
+    return math.sqrt(np.sum(np.square(diff))/diff.shape[0])
+
+
+
+
+
 
 '''
 Estimates w_0 from y_hat
