@@ -34,7 +34,7 @@ def run():
     lasso = lassoSolver.LassoClass()
     lambda_list = [0.4,0.35,0.3,0.25,0.2,0.1,0.05]
     for i in range(num_features):
-      bestw[i,:] = lasso.descendingLambda (ytrain[:,0].reshape(n_data,1), xtrain, lambda_list)
+      bestw[i,:] = lasso.descendingLambda (ytrain[:,0].reshape(n_data,1), xtrain, lambda_list).reshape(d)
 
     return bestw
     #fmri_test = io.mmread("subject1_fmri_std.test.mtx") # sparse format
