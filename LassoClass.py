@@ -5,7 +5,7 @@ import math
 
 class LassoClass:
     def __init__(self):
-        self.delta = 0.001
+        self.delta = 0.01
         self.error_decrease_limit = 0.01
 
     def set_delta(self,value):
@@ -44,7 +44,6 @@ class LassoClass:
             #RMSE_valid.append(rmsevalid)
             weights_list.append(w_new)
             print ("lambda : ", l_reg, "rmse validation ", rmsevalid, "rmse train : ", rmsetrain, " non Zeros : ", nonZeros)
-            l_reg = l_reg * self.lambda_ratio
             error_decreases = (previous_error - rmsevalid) > self.error_decrease_limit
             previous_error = rmsevalid
 
