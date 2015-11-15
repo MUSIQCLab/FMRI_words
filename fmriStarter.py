@@ -68,7 +68,6 @@ def run():
     io.mmwrite("allwallfeatures.mtx", bestw)
     # to read : neww = io.mmread ("allwsmtx.mtx")
 
-
     return bestw
     #fmri_test = io.mmread("subject1_fmri_std.test.mtx") # sparse format
     #fmri_test_sparse = sparse.csc_matrix (fmri_test)# sparse format
