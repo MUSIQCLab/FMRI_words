@@ -58,7 +58,7 @@ def run():
     l_best_round = int(round(l_best))
 
 
-    lambda_list = list(range(0,  l_best_round+ 10))
+    lambda_list = list(range(l_best_round - 5,  l_best_round+ 5))
 
 
     for i in range(num_features):
