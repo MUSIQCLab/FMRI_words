@@ -2,6 +2,7 @@ __author__ = 'Stella'
 
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 class LassoClass:
     def __init__(self):
@@ -31,7 +32,7 @@ class LassoClass:
         nonZeros_list = []
         weights_list = []
         l_reg = calculate_max_lambda (xtrain,ytrain)
-        while error_decreases:
+        while l_reg > 0.5: # used to be error_decreases
             print("coordinate descent with lambda", l_reg, ' and using previous w')
             (w_0,w_new,y_train_hat) = self.cordDescentLasso(np.copy(ytrain), xtrain, l_reg, w_new, w_0)
             rmsetrain = root_mean_squared_error(ytrain, y_train_hat)
@@ -53,19 +54,20 @@ class LassoClass:
         print(RMSE_valid)
         print(l_reg_list)
         print('best lambda is ', l_reg_list[ind_best_l])
+
+        train_line, = plt.plot(l_reg_list,RMSE_train,  label='Training Data')
+        valid_line, = plt.plot(l_reg_list,RMSE_valid, label='Validation Data')
+        plt.legend(handles=[train_line, valid_line])
+        plt.show()
         return (l_reg_list[ind_best_l])
 
 
 
     def descendingLambda (self,ytrain, xtrain, yvalid, xvalid,lambda_list, w_new = None, w_0 = 0.0):
         d = xtrain.shape[1]
-
         if (w_new == None):
             w_new = np.zeros((d,1))
 
-        #l_reg = calculate_max_lambda (xtrain,ytrain)
-        error_decreases = True
-        previous_error = float("inf")
         l_reg_list = []
         RMSE_train = []
         RMSE_valid = []

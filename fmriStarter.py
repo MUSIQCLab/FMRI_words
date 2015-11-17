@@ -5,6 +5,10 @@ import LassoClass as lassoSolver
 from pylab import *
 from scipy import sparse
 import numpy as np
+from fmridataloader import *
+
+# run pca to reduce dimensionality?
+
 
 # questions for ta
 # 1. amount of data / using some for validation
@@ -24,6 +28,18 @@ import numpy as np
 
 # shooting?
 # when it is better - predict word directly
+def findBestLambda(feature):
+    num_features = ytrain.shape[1]
+    d = xtrain.shape[1]
+    ntrain = 250
+    ntotdata = xtrain.shape[0]
+    lasso = lassoSolver.LassoClass()
+    lasso.set_error_decrease_limit(0)
+    # find the best lambda for the first feature
+    l_best = lasso.descendingLambdaFromMax (ytrain[0:ntrain,feature].reshape(ntrain,1), xtrain[0:ntrain,:], ytrain[ntrain:,feature].reshape(ntotdata-ntrain,1), xtrain[ntrain:,:])
+    l_best_round = int(round(l_best))
+
+
 
 def run():
     dictionary = open("meta/dictionary.txt").read().splitlines()
@@ -36,7 +52,6 @@ def run():
 
     # prepare ytrain
     # careful words start from 1 - 60 not zero based!
-
     size_train_data = wordid_train.shape[0]
     ytrain = np.zeros([size_train_data, wordfeature_std.shape[1]])
     for i in  range (0,size_train_data):
