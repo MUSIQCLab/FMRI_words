@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Nov 14 12:55:13 2015
-
-@author: Tomasz
+@author: Stella,Tomasz
 """
 
 #go through each fmri in the wordid_test and associate its semantic features
@@ -28,8 +27,6 @@ def main ():
         sem_features_test_true[i] = wordfeature_std[wordid_test[i,0] - 1]
         sem_features_test_false[i] = wordfeature_std[wordid_test[i,1] - 1]
 
-    #print( tester (fmri_train_sparse, myw, wordfeature_std))
-    #print(tester (fmri_test_sparse, myw, wordfeature_std))
     guessed_words = word_guesser(fmri_test_sparse, myw, sem_features_test_true, sem_features_test_false)
     print('the array of guesssed words is:', guessed_words)
     print ('words guessed correctly:',sum(guessed_words))

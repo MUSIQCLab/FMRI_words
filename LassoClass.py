@@ -1,5 +1,8 @@
-__author__ = 'Stella'
-
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 14 12:55:13 2015
+@author: Stella,Tomasz
+"""
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -16,6 +19,11 @@ class LassoClass:
         self.error_decrease_limit = value
 
 
+    '''
+    Runs lasso with descending lambda (decreasing by lambda ratio) starting from max.
+    It stops when lambda becomes 0.5 and returns the lambda with the smallest rmse
+    on the validation data.
+    '''
     def descendingLambdaFromMax (self, ytrain, xtrain, yvalid, xvalid,w_new = None, w_0 = 0.0):
         lambda_ratio = 0.8
         d = xtrain.shape[1]
@@ -61,8 +69,11 @@ class LassoClass:
         plt.show()
         return (l_reg_list[ind_best_l])
 
-
-
+    '''
+    Runs lasso with descending lambda from given lambda_list.
+    It stops in each lambda when w converges. It returns the weights
+    for the lambda with the smallest validation error.
+    '''
     def descendingLambda (self,ytrain, xtrain, yvalid, xvalid,lambda_list, w_new = None, w_0 = 0.0):
         d = xtrain.shape[1]
         if (w_new == None):
@@ -96,6 +107,11 @@ class LassoClass:
         return (weights_list[ind_best_l])
 
 
+
+    '''
+    Coordinate Descnet for lasso given a lambda l_reg
+    Stops when the parameter w_old converges.
+    '''
     def cordDescentLasso (self, y, x, l_reg, w_old , w_0):
         condition = True
         d = x.shape[1]
