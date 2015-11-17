@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 11 13:16:17 2015
-
-@author: Tomasz
+Created on Sat Nov 14 12:55:13 2015
+@author: Stella,Tomasz
 """
+
+#go through each fmri in the wordid_test and associate its semantic features
+
 
 import scipy.io as io
 from scipy import sparse
