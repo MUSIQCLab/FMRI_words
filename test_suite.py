@@ -8,10 +8,10 @@ Created on Sat Nov 14 12:55:13 2015
 
 import numpy as np
 import scipy.io as spio
-from fmridataloader import *
+#from fmridataloader import *
 
-def main ():
-    myw = spio.mmread('allw-bestlambda193.mtx')
+def main (wfile,wordid_train,wordid_test,wordfeature_std,fmri_test_sparse):
+    myw = spio.mmread(wfile)
 
     num_train = len(wordid_train)
     num_test = len(wordid_test)
@@ -63,5 +63,5 @@ def word_guesser(fmri_data, weights, sem_feat_true, sem_feat_false):
     return test_list
 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+ #   main()

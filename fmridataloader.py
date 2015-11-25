@@ -18,7 +18,7 @@ print('loading fmri training and test data')
 
 fmri_train = io.mmread("subject1_fmri_std.train.mtx")
 fmri_train_sparse = sparse.csc_matrix (fmri_train)# sparse format
-fmri_test = io.mmread("subject1_fmri_std.test.mtx") # sparse format
+fmri_test = io.mmread("subject1_fmri_std.test.mtx")
 fmri_test_sparse = sparse.csc_matrix (fmri_test)# sparse format
 
 print('loading word data')
