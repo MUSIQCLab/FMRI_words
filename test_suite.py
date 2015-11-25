@@ -8,13 +8,13 @@ Created on Sat Nov 14 12:55:13 2015
 
 import numpy as np
 import scipy.io as spio
-from fmridataloader import *
+#from fmridataloader import *
 
-def main ():
-    myw = spio.mmread('allw-bestlambda193.mtx')
+def main (wfile,wordid_train,wordid_test,wordfeature_std,fmri_test_sparse):
+    myw = spio.mmread(wfile)
 
-    num_train = len(wordid_train)
-    num_test = len(wordid_test)
+    num_train = wordid_train.shape[0]
+    num_test = wordid_test.shape[0]
     n_semantic = 218
     sem_features_train = np.zeros((num_train,n_semantic))
     sem_features_test_true = np.zeros((num_test,n_semantic))
@@ -48,14 +48,14 @@ def tester(fmri_data, weights, sem_features): #
 
 # sem_feat_true: Semantic featutes of trues in test data
 # sem_feat false: Semantic featutes of falses in test data
-def word_guesser(fmri_data, weights, sem_feat_true, sem_feat_false):
+def word_guesser(fmri_data, weights, sem_features_test_true, sem_features_test_false):
     predict = fmri_data.dot(weights.T)
-    num_test = len(sem_feat_true)
+    num_test = len(sem_features_test_true)
     test_list = np.zeros(num_test) #return values
-    
+
     for i in range(num_test):
-        rmse_false = sum(np.square(predict[i]-sem_feat_false[i]))
-        rmse_true = sum(np.square(predict[i]-sem_feat_true[i]))
+        rmse_false = sum(np.square(predict[i]-sem_features_test_false[i]))
+        rmse_true = sum(np.square(predict[i]-sem_features_test_true[i]))
         if rmse_true < rmse_false:
             test_list[i] = 1
         else:
@@ -63,5 +63,5 @@ def word_guesser(fmri_data, weights, sem_feat_true, sem_feat_false):
     return test_list
 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+ #   main()

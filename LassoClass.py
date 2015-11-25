@@ -86,7 +86,7 @@ class LassoClass:
         weights_list = []
 
         for l_reg in lambda_list:
-            print("coordinate descent with lambda", l_reg, ' and using previous w')
+            #print("coordinate descent with lambda", l_reg, ' and using previous w')
             (w_0,w_new,y_train_hat) = self.cordDescentLasso(np.copy(ytrain), xtrain, l_reg, w_new, w_0)
             rmsetrain = root_mean_squared_error(ytrain, y_train_hat)
             rmsevalid = root_mean_squared_error(yvalid,calculate_predicted_y(xvalid,w_new,w_0) )
@@ -96,7 +96,7 @@ class LassoClass:
             RMSE_train.append(rmsetrain)
             RMSE_valid.append(rmsevalid)
             weights_list.append(w_new)
-            print ("lambda : ", l_reg, "rmse validation ", rmsevalid, "rmse train : ", rmsetrain, " non Zeros : ", nonZeros)
+            #print ("lambda : ", l_reg, "rmse validation ", rmsevalid, "rmse train : ", rmsetrain, " non Zeros : ", nonZeros)
 
 
         # find best lambda - smallest validation error

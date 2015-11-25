@@ -12,8 +12,12 @@ from pylab import *
 from scipy import sparse
 import numpy as np
 from fmridataloader import *
+from multiprocessing import Pool
+from matplotlib.mlab import PCA
+from sklearn.decomposition import PCA
+import test_suite
 
-# questions for ta
+# questions
 # 1. amount of data / using some for validation
 # 2. shooting? necessary? other ideas?
 # 3. lambda range
@@ -32,20 +36,53 @@ from fmridataloader import *
 # shooting?
 # when it is better - predict word directly
 
+def withPCA (dimensions):
+
+    pca = PCA(n_components=dimensions)
+    pca.fit(fmri_train)
+    xtrainpcaed= pca.transform(fmri_train)
+
+    xtrainPCA = sparse.csc_matrix (xtrainpcaed)
+    xtest = pca.transform (fmri_test)
+
+    num_features = ytrain.shape[1]
+    d = xtrainPCA.shape[1]
+    ntrain = 250
+    ntotdata = xtrainPCA.shape[0]
+
+    bestw = np.zeros([num_features,d])
+    lasso = lassoSolver.LassoClass()
+
+    # get best lambda for the first feature
+    lambda_list = list(range(20,100))
+
+    for i in range(num_features):
+      print ('looking at feature ', i)
+      bestw[i,:]  = lasso.descendingLambda(ytrain[0:ntrain,i].reshape(ntrain,1), xtrainPCA[0:ntrain,:], ytrain[ntrain:,i].reshape(ntotdata-ntrain,1), xtrainPCA[ntrain:,:], lambda_list).reshape(d)
+
+    wfile = "allwallfeatures_pca1000.mtx"
+    io.mmwrite(wfile, bestw)
+
+    # to read : neww = io.mmread ("allwsmtx.mtx")
+
+    test_suite.main(wfile,wordid_train,wordid_test,wordfeature_std,xtest)
+
+    return bestw, pca
+
+
+
+
+
 def findlambda_crossvalidation():
     num_features = ytrain.shape[1]
     d = xtrain.shape[1]
     ntrain = 250
     ntotdata = xtrain.shape[0]
     n_crossvalid = 60
-
-    # only for the first question
     bestw = np.zeros([num_features,d])
     lasso = lassoSolver.LassoClass()
-
     #k-fold the data (k = 60). Cross validation using 60 samples for each validation set. Take median lambda.
     #note that we should randomly try several different words to train on...
-
     l_cross_val = []
 
     # find the best lambda for the first feature
@@ -59,33 +96,52 @@ def findlambda_crossvalidation():
         l_best = lasso.descendingLambdaFromMax(ytraintrain, xtraintrain, yvalid, xvalid)
         l_cross_val.append(l_best)
 
-    print l_cross_val
+    print (l_cross_val)
     return l_cross_val
 
+
+def findlambda_50validation():
+    num_features = ytrain.shape[1]
+    d = xtrain.shape[1]
+    ntrain = 250
+    ntotdata = xtrain.shape[0]
+    lasso = lassoSolver.LassoClass()
+    #get best lambda for the first feature
+    l_best = lasso.descendingLambdaFromMax(ytrain[0:ntrain,1].reshape(ntrain,1), xtrain[0:ntrain,:], ytrain[ntrain:,1].reshape(ntotdata-ntrain,1), xtrain[ntrain:,:])
+    l_best_round = int(round(l_best))
+    print (l_best_round)
+    return l_best_round
 
 
 def run():
     # get each of the semantic features separatelly and run lasso on it
+    #l_best = findlambda_50validation()
+
     num_features = ytrain.shape[1]
     d = xtrain.shape[1]
     ntrain = 250
     ntotdata = xtrain.shape[0]
 
-
     bestw = np.zeros([num_features,d])
     lasso = lassoSolver.LassoClass()
 
     # get best lambda for the first feature
-    l_best = lasso.descendingLambdaFromMax(ytrain[0:ntrain,1].reshape(ntrain,1), xtrain[0:ntrain,:], ytrain[ntrain:,1].reshape(ntotdata-ntrain,1), xtrain[ntrain:,:])
-    l_best_round = int(round(l_best))
-    lambda_list = list(range(l_best_round - 5,  l_best_round+ 5))
+    l_best_round = 10
+    lambda_list = list(range(l_best_round + 5,  l_best_round - 5))
+
+    #pool = Pool() #defaults to number of available CPU's
+    #chunksize = 20 #this may take some guessing ... take a look at the docs to decide
+    #for i in enumerate(pool.imap(Fun, product(xrange(N), xrange(N))), chunksize):
+    #for i in range(num_features):
+     #  print ('looking at feature ', i)
+      # bestw[i,:]  = lasso.descendingLambda(ytrain[0:ntrain,i].reshape(ntrain,1), xtrain[0:ntrain,:], ytrain[ntrain:,i].reshape(ntotdata-ntrain,1), xtrain[ntrain:,:], lambda_list).reshape(d)
 
 
     for i in range(num_features):
       print ('looking at feature ', i)
       bestw[i,:]  = lasso.descendingLambda(ytrain[0:ntrain,i].reshape(ntrain,1), xtrain[0:ntrain,:], ytrain[ntrain:,i].reshape(ntotdata-ntrain,1), xtrain[ntrain:,:], lambda_list).reshape(d)
 
-    io.mmwrite("allwallfeatures.mtx", bestw)
+    io.mmwrite("allwallfeatures_nov17.mtx", bestw)
     # to read : neww = io.mmread ("allwsmtx.mtx")
     return bestw
 
