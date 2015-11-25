@@ -36,15 +36,13 @@ import test_suite
 # shooting?
 # when it is better - predict word directly
 
-def withPCA (dimensions):
 
+def withPCA (dimensions):
     pca = PCA(n_components=dimensions)
     pca.fit(fmri_train)
     xtrainpcaed= pca.transform(fmri_train)
-
     xtrainPCA = sparse.csc_matrix (xtrainpcaed)
     xtest = pca.transform (fmri_test)
-
     num_features = ytrain.shape[1]
     d = xtrainPCA.shape[1]
     ntrain = 250
@@ -54,11 +52,12 @@ def withPCA (dimensions):
     lasso = lassoSolver.LassoClass()
 
     # get best lambda for the first feature
-    lambda_list = list(range(20,100))
+    lambda_list = list(range(5,150))
 
     for i in range(num_features):
       print ('looking at feature ', i)
       bestw[i,:]  = lasso.descendingLambda(ytrain[0:ntrain,i].reshape(ntrain,1), xtrainPCA[0:ntrain,:], ytrain[ntrain:,i].reshape(ntotdata-ntrain,1), xtrainPCA[ntrain:,:], lambda_list).reshape(d)
+
 
     wfile = "allwallfeatures_pca1000.mtx"
     io.mmwrite(wfile, bestw)
