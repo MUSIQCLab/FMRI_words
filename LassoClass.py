@@ -153,10 +153,12 @@ class LassoClass:
     Coordinate Descnet for lasso given a lambda l_reg
     Stops when the parameter w_old converges.
     '''
-    def cordDescentLasso (self, y, x, l_reg, w_old , w_0):
+    def cordDescentLasso (self, y, x, l_reg, w_old = None, w_0 = 0.0):
         condition = True
         d = x.shape[1]
         a = 2 * np.sum(np.square(x.toarray()),axis=0)
+        if (w_old == None):
+            w_old = np.zeros((d,1))
 
         while condition:
             w_new = np.copy (w_old)
@@ -216,6 +218,8 @@ def estimate_wk (k, y_hat, y, w, X, l_reg, a):
     test = X.getcol(k).toarray() * w[k]
     sum = y_dif + test
     ck = 2 * X.getcol(k).transpose().dot(sum)
+    ck = ck[0][0]
+
 
     if ck  < - l_reg :
         w[k] = (ck + l_reg) / a[k]

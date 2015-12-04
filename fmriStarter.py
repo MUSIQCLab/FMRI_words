@@ -37,6 +37,8 @@ import test_suite
 
 
 
+
+
 def withPCA (dimensions):
     pca = PCA(n_components=dimensions)
     pca.fit(fmri_train)
@@ -47,22 +49,17 @@ def withPCA (dimensions):
     d = xtrainPCA.shape[1]
     ntrain = 250
     ntotdata = xtrainPCA.shape[0]
-
     bestw = np.zeros([num_features,d])
     lasso = lassoSolver.LassoClass()
     accuracy = np.zeros(d)
     # get best lambda for the first feature
     lambda_list = list(range(80,120))
-
     for i in range(num_features):
       print ('looking at feature ', i)
       bestw[i,:]  = lasso.descendingLambda(ytrain[0:ntrain,i].reshape(ntrain,1), xtrainPCA[0:ntrain,:], ytrain[ntrain:,i].reshape(ntotdata-ntrain,1), xtrainPCA[ntrain:,:], lambda_list).reshape(d)
-
     wfile = "allwallfeatures_pca300_lambda80_120.mtx"
     io.mmwrite(wfile, bestw)
-
     # to read : bestw = io.mmread ("allwsmtx.mtx")
-
     test_suite.main(wfile,wordid_train,wordid_test,wordfeature_std,xtest)
 
     return [accuracy,bestw, pca]
@@ -144,6 +141,8 @@ def run():
     return bestw
 
 
+
+# currently does not work to calculate w - soemthing wrong with my lasso function
 def crossValidationPCA (dimensions):
     pca = PCA(n_components=dimensions)
     pca.fit(fmri_train)
@@ -153,23 +152,30 @@ def crossValidationPCA (dimensions):
     num_features = ytrain.shape[1]
     d = xtrainPCA.shape[1]
     ntotdata = xtrainPCA.shape[0]
-
     bestw = np.zeros([num_features,d])
     lasso = lassoSolver.LassoClass()
+    bestw0 = np.zeros([num_features,d])
 
-    for i in range(num_features):
+
+    for i in range(2): #num_features):
         print ('looking at feature ', i)
-        bestlambda = lasso.findLambdaCrossValidation(ytrain[:,i].reshape(ntotdata,1),xtrainPCA,5)
-        bestw[i,:]  = lasso.cordDescentLasso (ytrain[:,i].reshape(ntotdata,1),xtrainPCA, bestlambda)
+        #bestlambda = lasso.findLambdaCrossValidation(ytrain[:,i].reshape(ntotdata,1),xtrainPCA,5)
+        bestlambda = 142.5
+        [w_0,w_new,y_hat]  = lasso.cordDescentLasso (ytrain[:,i].reshape(ntotdata,1),xtrainPCA, bestlambda)
+        bestw[i,:] = w_new.reshape(d)
+        bestw0 [i,:] = w_0
 
-    wfile = "allwallfeatures_crossvalidationlambda_pca300.mtx"
+    wfile = "w_crossvalidationlambda_pca300.mtx"
+    w0file = "w0_crossvalidationlambda_pca300.mtx"
     io.mmwrite(wfile, bestw)
-    test_suite.main(wfile,wordid_train,wordid_test,wordfeature_std,xtest)
-    return [accuracy,bestw, pca]
+    io.mmwrite(w0file, bestw0)
+
+    test_suite.main(bestw,bestw0,wordid_train,wordid_test,wordfeature_std,xtest)
+    return [accuracy,bestw,w0, pca]
 
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
-    crossValidationPCA(300)
+
 
 
 
