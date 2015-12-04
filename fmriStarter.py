@@ -12,8 +12,6 @@ from pylab import *
 from scipy import sparse
 import numpy as np
 from fmridataloader import *
-from multiprocessing import Pool
-from matplotlib.mlab import PCA
 from sklearn.decomposition import PCA
 import test_suite
 
@@ -33,8 +31,10 @@ import test_suite
 # 4. Tie togethers semantic features into bundles? 
 # 5. Cross validation
 # 6. Our Y-values do really look strange as stella mentioned. Should we talk about that when we give our results?
-# shooting?
 # when it is better - predict word directly
+
+
+
 
 
 def withPCA (dimensions):
@@ -50,23 +50,23 @@ def withPCA (dimensions):
 
     bestw = np.zeros([num_features,d])
     lasso = lassoSolver.LassoClass()
-
+    accuracy = np.zeros(d)
     # get best lambda for the first feature
-    lambda_list = list(range(5,150))
+    lambda_list = list(range(80,120))
 
     for i in range(num_features):
       print ('looking at feature ', i)
       bestw[i,:]  = lasso.descendingLambda(ytrain[0:ntrain,i].reshape(ntrain,1), xtrainPCA[0:ntrain,:], ytrain[ntrain:,i].reshape(ntotdata-ntrain,1), xtrainPCA[ntrain:,:], lambda_list).reshape(d)
 
-
-    wfile = "allwallfeatures_pca1000.mtx"
+    wfile = "allwallfeatures_pca300_lambda80_120.mtx"
     io.mmwrite(wfile, bestw)
 
-    # to read : neww = io.mmread ("allwsmtx.mtx")
+    # to read : bestw = io.mmread ("allwsmtx.mtx")
 
     test_suite.main(wfile,wordid_train,wordid_test,wordfeature_std,xtest)
 
-    return bestw, pca
+    return [accuracy,bestw, pca]
+
 
 
 
@@ -75,7 +75,6 @@ def withPCA (dimensions):
 def findlambda_crossvalidation():
     num_features = ytrain.shape[1]
     d = xtrain.shape[1]
-    ntrain = 250
     ntotdata = xtrain.shape[0]
     n_crossvalid = 60
     bestw = np.zeros([num_features,d])
@@ -145,8 +144,34 @@ def run():
     return bestw
 
 
+def crossValidationPCA (dimensions):
+    pca = PCA(n_components=dimensions)
+    pca.fit(fmri_train)
+    xtrainpcaed= pca.transform(fmri_train)
+    xtrainPCA = sparse.csc_matrix (xtrainpcaed)
+    xtest = pca.transform (fmri_test)
+    num_features = ytrain.shape[1]
+    d = xtrainPCA.shape[1]
+    ntotdata = xtrainPCA.shape[0]
+
+    bestw = np.zeros([num_features,d])
+    lasso = lassoSolver.LassoClass()
+
+    for i in range(num_features):
+        print ('looking at feature ', i)
+        bestlambda = lasso.findLambdaCrossValidation(ytrain[:,i].reshape(ntotdata,1),xtrainPCA,5)
+        bestw[i,:]  = lasso.cordDescentLasso (ytrain[:,i].reshape(ntotdata,1),xtrainPCA, bestlambda)
+
+    wfile = "allwallfeatures_crossvalidationlambda_pca300.mtx"
+    io.mmwrite(wfile, bestw)
+    test_suite.main(wfile,wordid_train,wordid_test,wordfeature_std,xtest)
+    return [accuracy,bestw, pca]
+
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
+    crossValidationPCA(300)
+
+
 
 
 if __name__ == '__main__':

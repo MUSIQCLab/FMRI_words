@@ -19,6 +19,49 @@ class LassoClass:
         self.error_decrease_limit = value
 
 
+    def findLambdaCrossValidation (self, ytrain, xtrain, k ,w_new = None, w_0 = 0.0):
+        ntotdata = xtrain.shape[0]
+        n_crossvalid = int(ntotdata/k)
+        d = xtrain.shape[1]
+        if (w_new == None):
+            w_new = np.zeros((d,1))
+        iterations = 50
+        lambda_ratio = 0.95
+        l_reg_list = []
+        errors = np.zeros ((k,iterations))
+
+
+
+        for i in range(k):
+            l_reg = 150
+            #l_reg = calculate_max_lambda (xtrain,ytrain)
+            #print('we are at k', i)
+            validation = range(i * n_crossvalid, (i+1)*n_crossvalid) #generates the numbers corresponding to the validation set
+            train = list(set(range(ntotdata)) - set(validation)) # generates nums corresponding to test set
+            ytraintrain = ytrain[train]
+            xtraintrain = xtrain[train,:]
+            yvalid = ytrain[validation]
+            xvalid = xtrain[validation,:]
+            RMSE_valid = []
+            for j in range(iterations):
+                (w_0,w_new,y_train_hat) = self.cordDescentLasso(np.copy(ytraintrain), xtraintrain, l_reg, w_new, w_0)
+                rmsevalid = root_mean_squared_error(yvalid,calculate_predicted_y(xvalid,w_new,w_0) )
+                l_reg_list.append(l_reg)
+                RMSE_valid.append(rmsevalid)
+                #print("coordinate descent with lambda", l_reg, ' and using previous w rmse is ', rmsevalid)
+                l_reg = l_reg * lambda_ratio
+
+            errors[i,:] = RMSE_valid
+        # take average
+        mean_error = np.mean(errors,axis=1)
+        rmse_mean_error = mean_error.tolist()
+        ind_best_l = np.argmin(rmse_mean_error)
+        print('best lambda is ', l_reg_list[ind_best_l])
+        return [l_reg_list[ind_best_l]]
+
+
+
+
     '''
     Runs lasso with descending lambda (decreasing by lambda ratio) starting from max.
     It stops when lambda becomes 0.5 and returns the lambda with the smallest rmse
@@ -27,20 +70,17 @@ class LassoClass:
     def descendingLambdaFromMax (self, ytrain, xtrain, yvalid, xvalid,w_new = None, w_0 = 0.0):
         lambda_ratio = 0.8
         d = xtrain.shape[1]
-
         if (w_new == None):
             w_new = np.zeros((d,1))
-
-        #l_reg = calculate_max_lambda (xtrain,ytrain)
-        error_decreases = True
         previous_error = float("inf")
         l_reg_list = []
         RMSE_train = []
         RMSE_valid = []
         nonZeros_list = []
         weights_list = []
-        l_reg = calculate_max_lambda (xtrain,ytrain)
-        while l_reg > 0.5: # used to be error_decreases
+        #l_reg = calculate_max_lambda (xtrain,ytrain)
+        l_reg = 150
+        while l_reg > 0: # used to be error_decreases
             print("coordinate descent with lambda", l_reg, ' and using previous w')
             (w_0,w_new,y_train_hat) = self.cordDescentLasso(np.copy(ytrain), xtrain, l_reg, w_new, w_0)
             rmsetrain = root_mean_squared_error(ytrain, y_train_hat)
@@ -67,7 +107,7 @@ class LassoClass:
         valid_line, = plt.plot(l_reg_list,RMSE_valid, label='Validation Data')
         plt.legend(handles=[train_line, valid_line])
         plt.show()
-        return (l_reg_list[ind_best_l])
+        return [l_reg_list[ind_best_l]]
 
     '''
     Runs lasso with descending lambda from given lambda_list.
@@ -101,9 +141,10 @@ class LassoClass:
 
         # find best lambda - smallest validation error
         ind_best_l = np.argmin(RMSE_valid)
-        print (RMSE_valid)
-        print(RMSE_train)
-        print(l_reg_list)
+        print('best lambda is ',l_reg_list[ind_best_l])
+        #print (RMSE_valid)
+        #print(RMSE_train)
+        #print(l_reg_list)
         return (weights_list[ind_best_l])
 
 
