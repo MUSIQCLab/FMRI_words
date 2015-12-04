@@ -10,27 +10,50 @@ import numpy as np
 import scipy.io as spio
 #from fmridataloader import *
 
-def main (wfile,wordid_train,wordid_test,wordfeature_std,fmri_test_sparse):
-    myw = spio.mmread(wfile)
 
-    num_train = wordid_train.shape[0]
+
+def prepareData (wordid_test,wordfeature_std):
     num_test = wordid_test.shape[0]
-    n_semantic = 218
-    sem_features_train = np.zeros((num_train,n_semantic))
+    n_semantic = wordfeature_std.shape[1]
     sem_features_test_true = np.zeros((num_test,n_semantic))
     sem_features_test_false = np.zeros((num_test,n_semantic))
-
-    for i in range(num_train):
-        sem_features_train[i] = wordfeature_std[wordid_train[i][0] - 1]
-
     for i in range(num_test):
         sem_features_test_true[i] = wordfeature_std[wordid_test[i,0] - 1]
         sem_features_test_false[i] = wordfeature_std[wordid_test[i,1] - 1]
+    return [sem_features_test_true,sem_features_test_false]
 
-    guessed_words = word_guesser(fmri_test_sparse, myw, sem_features_test_true, sem_features_test_false)
+
+
+def accuracyPerFeature (weights,wordid_test,wordfeature_std,fmri_test_data_sparse) :
+
+    [sem_features_test_true,sem_features_test_false] = prepareData (wordid_test,wordfeature_std)
+    predict = fmri_test_data_sparse.dot(weights.T)
+    num_test = len(sem_features_test_true)
+    n_semantic = sem_features_test_true.shape[1]
+    accuracy = np.zeros(n_semantic) #return values
+
+    for j in range (1,n_semantic+1):
+        rmse_true = sum(np.square(predict[:,0:j] - sem_features_test_true[:,0:j]),axis = 1)
+        rmse_false = sum(np.square(predict[:,0:j] - sem_features_test_false[:,0:j]),axis = 1)
+        test_list = rmse_true<rmse_false
+        accuracy[j-1] = sum(test_list)/num_test
+
+    plt.plot(accuracy)
+    plt.ylabel("Accuracy")
+    plt.xlabel("Semantic Features")
+    plt.show()
+    return accuracy
+
+
+    
+
+def main (wfile,wordid_test,wordfeature_std,fmri_test_data_sparse):
+    myw = spio.mmread(wfile)
+    [sem_features_test_true,sem_features_test_false] = prepareData (wordid_test,wordfeature_std)
+    [guessed_words, percentage] = word_guesser(fmri_test_data_sparse, myw, sem_features_test_true, sem_features_test_false)
     print('the array of guesssed words is:', guessed_words)
     print ('words guessed correctly:',sum(guessed_words))
-    print ('percentage guessed correctly:', sum(guessed_words)/guessed_words.size)
+    print ('percentage guessed correctly:',percentage)
     return guessed_words
 
 
@@ -46,21 +69,16 @@ def tester(fmri_data, weights, sem_features): #
 
 
 
+
 # sem_feat_true: Semantic featutes of trues in test data
 # sem_feat false: Semantic featutes of falses in test data
 def word_guesser(fmri_data, weights, sem_features_test_true, sem_features_test_false):
-    predict = fmri_data.dot(weights.T)
+    predict = fmri_test_data_sparse.dot(weights.T)
     num_test = len(sem_features_test_true)
-    test_list = np.zeros(num_test) #return values
-
-    for i in range(num_test):
-        rmse_false = sum(np.square(predict[i]-sem_features_test_false[i]))
-        rmse_true = sum(np.square(predict[i]-sem_features_test_true[i]))
-        if rmse_true < rmse_false:
-            test_list[i] = 1
-        else:
-            test_list[i] = 0
-    return test_list
+    rmse_true = sum(np.square(predict - sem_features_test_true),axis = 1)
+    rmse_false = sum(np.square(predict - sem_features_test_false),axis = 1)
+    test_list = rmse_true<rmse_false
+    return [test_list, sum(test_list)/test_list.size]
 
 
 #if __name__ == '__main__':
