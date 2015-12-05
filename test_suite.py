@@ -53,10 +53,10 @@ def main_file (wfile,w0file,wordid_test,wordfeature_std,fmri_test_data):
 def main (w,w0,wordid_test,wordfeature_std,fmri_test_data):
     [sem_features_test_true,sem_features_test_false] = prepareData (wordid_test,wordfeature_std)
     [guessed_words, percentage] = word_guesser(fmri_test_data, w, w0, sem_features_test_true, sem_features_test_false)
-    print('the array of guesssed words is:', guessed_words)
-    print ('words guessed correctly:',sum(guessed_words))
+    #print('the array of guesssed words is:', guessed_words)
+    #print ('words guessed correctly:',sum(guessed_words))
     print ('percentage guessed correctly:',percentage)
-    return guessed_words
+    return [percentage]
 
 
 
