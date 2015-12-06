@@ -1,6 +1,7 @@
 __author__ = 'Stella'
 
 import scipy.io as io
+import scipy.stats as stats
 import numpy as np
 from fmridataloader import *
 from sklearn.decomposition import PCA
@@ -21,7 +22,7 @@ def least_squares (X,Y):
     return w_least_squares
 
 
-# runs pca on data given dimension returns pcafitted data
+# runs pca on data given dimension returns pca transformed data
 # for training and test data
 def pcaData (dimensions):
     pca = PCA(n_components=dimensions)
@@ -31,9 +32,9 @@ def pcaData (dimensions):
     return [xtrainPCA,xtestPCA]
 
 
-# finds the w after it pcas the data and does least square on data
+# finds the weights after it pcas the data and does least square on data
 # it then returns accuracy on test data on guess out of 2 words
-# and returns rmse on test and training data, and also the on the wrong golcumn of training data.
+# and returns rmse on test and training data, and also the on the wrong column of training data.
 def findw_PSA_LSE (dimensions):
     [xtrainPCA,xtestPCA] = pcaData(dimensions)
     num_features = ytrain.shape[1]
@@ -74,14 +75,31 @@ def word_ranking (x,w,wordid_true):
         print('word at location : ', i)
         rmse_per_word = []
         for j in range (num_words): # go through every single word
-            y = wordfeature_std [j]
-            rmse = rmse_per_semantic_feature (x_current,y,w)
+            y = wordfeature_std [j] #semantic features for jth word.
+            rmse = rmse_per_semantic_feature (x_current,y,w) #always 0?????
             rmse_per_word.append(rmse) # it is only one datapoint so it is already summed..
-        sorted_indexes = np.argsort(rmse_per_word)
-        correct_word = wordid_true[i][0] - 1
+        sorted_indexes = stats.rankdata(rmse_per_word) #note argsort returns indices that would sort array
+        correct_word = wordid_true[i] - 1
         rank_of_word = sorted_indexes [correct_word]
         ranks.append(rank_of_word)
     print(ranks)
+    return ranks
+    
+#Temporary notes for word_ranking:
+#maybe we need to check if it is terrible at ranking some particular words? regardless of fmri?
+
+def two_class_rankings(x,w,wordid_test):
+    wd_true = wordid_test[:,0]
+    wordid_false = wordid_test[:,1]
+    true_ranks = word_ranking(x,w,wd_true)
+    false_ranks = word_ranking(x,w,wordid_false)
+    incorrect_tests =  [i for i in range(59) if my_true_ranks[i] > my_false_ranks[i]]
+    incorrect_true_ids = [int(wordid_test[i][0] - 1) for i in incorrect_tests] #compensate for wordids numbered from 1 to 60
+    incorrect_false_ids = [int(wordid_test[i][1] - 1) for i in incorrect_tests]
+    incorrect_true_words = [dictionary[i] for i in incorrect_true_ids]
+    incorrect_false_words = [dictionary[i] for i in incorrect_false_ids]
+    return true_ranks, false_ranks, [(incorrect_true_words[i],incorrect_false_words[i]) for i in range(len(incorrect_true_words))]
+
 
 # it goes through different pca dimensions
 # calculates the w and then accuracy and rmse for test and training data
@@ -166,7 +184,7 @@ def testing (w,xtrain,ytrain,xtest,ytest):
 def rmse_per_semantic_feature (x,y,w):
     y_predict = x.dot(w.T)
     n = y_predict.shape[0]
-    rmse = np.sum(1/n * np.square(y_predict - y),axis = 0) # rmse per semantic feature
+    rmse = np.sum(1./n * np.square(y_predict - y),axis = 0) # rmse per semantic feature
     return rmse
 
 
