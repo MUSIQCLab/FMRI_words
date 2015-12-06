@@ -27,6 +27,10 @@ def least_squares (X,Y):
 def pcaData (dimensions):
     pca = PCA(n_components=dimensions)
     pca.fit(fmri_train)
+    print(pca.explained_variance_ratio_)
+    variance  = pca.explained_variance_ratio_
+    plt.plot(variance)
+    plt.show()
     xtrainPCA= pca.transform(fmri_train)
     xtestPCA = pca.transform (fmri_test)
     return [xtrainPCA,xtestPCA]
@@ -188,16 +192,15 @@ def rmse_per_semantic_feature (x,y,w):
     return rmse
 
 
-
 # main function - put here what you want to run!
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
-    [xtrainPCA,xtestPCA] = pcaData (300)
-    [ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
-    w = io.mmread ("w_lse_dim300.mtx")
-    testing(w,xtrainPCA,ytrain,xtestPCA,ytest)
-    word_ranking (xtrainPCA,w,wordid_train)
-    word_ranking (xtestPCA,w,wordid_test)
+    [xtrainPCA,xtestPCA] = pcaData (50)
+    #[ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
+    #w = io.mmread ("w_lse_dim300.mtx")
+    #testing(w,xtrainPCA,ytrain,xtestPCA,ytest)
+    #word_ranking (xtrainPCA,w,wordid_train)
+    #word_ranking (xtestPCA,w,wordid_test)
 
 
 
