@@ -195,12 +195,12 @@ def rmse_per_semantic_feature (x,y,w):
 # main function - put here what you want to run!
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
-    [xtrainPCA,xtestPCA] = pcaData (50)
-    #[ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
-    #w = io.mmread ("w_lse_dim300.mtx")
-    #testing(w,xtrainPCA,ytrain,xtestPCA,ytest)
-    #word_ranking (xtrainPCA,w,wordid_train)
-    #word_ranking (xtestPCA,w,wordid_test)
+    [xtrainPCA,xtestPCA] = pcaData (300)
+    [ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
+    w = io.mmread ("w_lse_dim300.mtx")
+    testing(w,xtrainPCA,ytrain,xtestPCA,ytest)
+    word_ranking (xtrainPCA,w,wordid_train)
+    word_ranking (xtestPCA,w,wordid_test)
 
 
 
