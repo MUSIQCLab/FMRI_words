@@ -78,10 +78,11 @@ def word_guesser(fmri_data, weights, w0, sem_features_test_true, sem_features_te
     predict = fmri_data.dot(weights.T)+w0
     rmse_true = np.sum(np.square(predict - sem_features_test_true),axis = 1)
     rmse_false = np.sum(np.square(predict - sem_features_test_false),axis = 1)
-    test_list = rmse_true<rmse_false
-    print "wordguesser:test_list"
+    test_list = rmse_true < rmse_false
     return [test_list, sum(test_list)/float(test_list.size)]
 
 
 #if __name__ == '__main__':
  #   main()
+
+             

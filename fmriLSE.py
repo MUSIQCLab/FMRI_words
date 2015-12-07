@@ -24,23 +24,23 @@ def least_squares (X,Y):
 
 # runs pca on data given dimension returns pca transformed data
 # for training and test data
-def pcaData (dimensions):
+def pcaData (dimensions, training_data, testing_data):
     pca = PCA(n_components=dimensions)
-    pca.fit(fmri_train)
+    pca.fit(training_data)
     #print(pca.explained_variance_ratio_)
     #variance  = pca.explained_variance_ratio_
     #plt.plot(variance)
     #plt.show()
-    xtrainPCA= pca.transform(fmri_train)
-    xtestPCA = pca.transform (fmri_test)
+    xtrainPCA= pca.transform(training_data)
+    xtestPCA = pca.transform (testing_data)
     return [xtrainPCA,xtestPCA]
 
 
 # finds the weights after it pcas the data and does least square on data
 # it then returns accuracy on test data on guess out of 2 words
 # and returns rmse on test and training data, and also the on the wrong column of training data.
-def findw_PSA_LSE (dimensions):
-    [xtrainPCA,xtestPCA] = pcaData(dimensions)
+def findw_PCA_LSE (dimensions, train_data,test_data,wordid_test, ytrain, wfile = "w_lse_dim299.mtx"):
+    [xtrainPCA,xtestPCA] = pcaData(dimensions, train_data, test_data)
     num_features = ytrain.shape[1]
     d = xtrainPCA.shape[1]
     ntotdata = xtrainPCA.shape[0]
@@ -52,8 +52,7 @@ def findw_PSA_LSE (dimensions):
         y = ytrain[:,i].reshape(ntotdata,1)
         x = xtrainPCA[:,:]
         w = least_squares (x,y)
-        bestw[i,:]  = w.reshape(dimensions)
-    wfile = "w_lse_dim299.mtx"
+        bestw[i,:]  = w.reshape(dimensions)  
     io.mmwrite(wfile, bestw)
     # to read : bestw = io.mmread ("allwsmtx.mtx")
     [accuracy] = test_suite.main(bestw,bestw0,wordid_test,wordfeature_std,xtestPCA)
@@ -121,8 +120,9 @@ def differentPCADimensions ():
     rmsetestwrong_list = []
     j = 0
     for i in dimension_list:
-        print(i)
-        [accuracy,rmsetrain,rmsetest,rmsetestwrong] = findw_PSA_LSE (i)
+        print(i) 
+        [accuracy,rmsetrain,rmsetest,rmsetestwrong] = findw_PCA_LSE (i, fmri_train, fmri_test, wordid_test, ytrain )
+        #use global values above... Not great, but I don't want to put arguments here too?
         accuracy_list.append(accuracy)
         rmsetest_matrix[j] = rmsetest
         rmsetrain_list.append(np.sum(rmsetrain)/n_semantic)
@@ -182,7 +182,7 @@ def testing (w,xtrain,ytrain,xtest,ytest):
 
 def findBadWords ():
     w = io.mmread ("w_lse_dim299.mtx")
-    [xtrainPCA,xtestPCA] = pcaData (299)
+    [xtrainPCA,xtestPCA] = pcaData (299, fmri_train, fmri_test)
     [yright,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
     [guessed_words, percentage] = test_suite.word_guesser(xtestPCA, w, 0, yright, ywrong)
     indexes_incorrect_guesses = np.where(guessed_words == False)[0].tolist()
@@ -238,10 +238,32 @@ def rmse_per_semantic_feature (x,y,w):
     return rmse
 
 
+def drop_10_words(fmri_train,wordid_train, ytrain):
+    words_to_keep = 20
+    num_train_words = 5 * words_to_keep
+    short_wordid_train = []
+    short_fmri_train = np.ones((num_train_words,21764))
+    short_ytrain = ytrain
+    short_ytrain = np.ones((num_train_words,218))
+    drop_short = [i[0] if i[0] <= words_to_keep else -1 for i in wordid_train]
+    q = 0
+    for i in range(num_train_words):
+        while drop_short[q] == -1:
+            q += 1
+        short_fmri_train[i] =  fmri_train[q]
+        short_ytrain[i] = ytrain[q]
+        short_wordid_train.append(wordid_train[q])
+        q += 1
+    [xtrainPCA,xtestPCA] = pcaData (num_train_words, fmri_train, fmri_test)
+    wfile = "50_word_w_lse_dim299.mtx"
+    [accuracy,rmsetrain,rmsetest,rmsetestwrong] = findw_PCA_LSE(num_train_words, short_fmri_train,fmri_test,wordid_test, short_ytrain, wfile = wfile)
+    return short_fmri_train, short_wordid_train, short_ytrain
+
+
 # main function - put here what you want to run!
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
-    #[xtrainPCA,xtestPCA] = pcaData (300)
+    #[xtrainPCA,xtestPCA] = pcaData (300, fmri_train, fmri_train)
     #[ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
     #w = io.mmread ("w_lse_dim300.mtx")
     #testing(w,xtrainPCA,ytrain,xtestPCA,ytest)
