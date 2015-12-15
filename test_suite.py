@@ -85,3 +85,5 @@ def word_guesser(fmri_data, weights, w0, sem_features_test_true, sem_features_te
 
 #if __name__ == '__main__':
  #   main()
+
+             
