@@ -110,15 +110,19 @@ Following this initial test we tried cross validating our choice of $\lambda$. F
 
 
 
-
-
 \subsection{Results on the test data}
 
-The task for our model is simplified somewhat because the model need only choose between two words given an fMRI. Using a $\lambda$ of 134 as a starting point, obtained from training on the first semantic feature, we trained each of the other semantic feature for $\lambda$ 134 +/- 5 and choose the $\lambda$ value that had the lowest RMSE on the validation set. With the obtained weights we predicted the values for the 216 semantic features for each of the test cases. The predicted semantic feature values were then compared to the semantic features of the two given words. The word for which the semantic features have the smallest distance from the predicted semantic features was chosen. 
 
-For this value of $\lambda$ our results were close to random with only 52\% of the words guessed correctly (31 out of 60), indicating that the weights predicted are not satisfactory for the prediction of the semantic features.
+\subsection{Predict out of two}
+Our goal was to be able to predict out of two words the word that the subject was looking at during the time the fMRI image was taken. The predicted semantic feature values were compared to the semantic features of the two given words and the word for which the semantic features have the smallest distance from the predicted semantic features was chosen. Our accuracy was measured as the percentage of correctly predicted words out of the two choices. 
 
-We also run our algorithm with the lambdas suggested in the CSE599 homework where the values are (0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4), but again obtained results that are essentially random with 49\% of the words guessed correctly. The root mean square error on our training data set was \~0.25, where as on our test data set it was of the order of 22000. We're currently investigating issues with our lasso implementation, but the poor results obtained thus and the seeming overfitting of our training data are making us consider other models.
+Our first attempt was to use lasso. We used different methods of cross validation, to obtain the best $\lambda$  that had the lowest RMSE on the validation set and then train lasso on the data. Using this method our results were close to random with only 52\% of the words guessed correctly (31 out of 60), indicating that the weights predicted are not satisfactory for the prediction of the semantic features. The root mean square error on our training data set was \~0.25, where as on our test data set it was of the order of 22000. 
+
+The poor results, possibly due to the high dimensionality of our data, led us to consider PCA to decrease the dimensions. Using PCA with 300 principal components and then using linear regression with Lasso to train our model we obtained 70\% accuracy, which is higher than random. 
+
+
+
+\subsection{Word Ranking}
 
 
 \section{Discussion}
@@ -137,9 +141,9 @@ In our study we used 216 semantic features to predict a single word. A question 
 \caption{Accuracy versus number of features used}
 \end{figure}
 
-A second question we may ask is whether one semantic feature outperforms or underperforms the others.
+A second question we may ask is whether one semantic feature outperforms or under-performs the others. In the figure below we have
 
-\begin{figure}[h]
+\begin{figure}[u]
 \begin{center}
 %\framebox[4.0in]{$\;$}
 %\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
