@@ -76,6 +76,16 @@ w_{Lasso} = argmin \{|| Y - Xw ||^2 + \lambda|w|\}
 
 
 
+
+\subsection{PCA}
+
+The difficulty with this data set is that our dimensionality is many times higher than the amount of data we have. A possible way to decrease our dimensionality is to use Principal Component Analysis (PCA). Principal Component Analysis transforms a set of observations, which may be correlated, into a a new basis where the set of values are linearly uncorrelated. The new basis for the data is chosen in a way such that the components are in order of accounting for the largest possible variance in the data. 
+
+
+\subsection{Non linear features}
+
+
+
 \section{Results}
 
 
@@ -88,13 +98,17 @@ In order to choose a $\lambda$ suitable for our dataset we used pathwise optimiz
 \begin{center}
 %\framebox[4.0in]{$\;$}
 %\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-\includegraphics[scale=0.5]{trainvalidlambda}
+\includegraphics[scale=0.5]{trainvalidlambda.png}
 \end{center}
 \caption{Training lambdas on the first semantic feature on 250 data, and using 50 fMRI
 images as a validation test. Horizontal axis: value of lambda. Vertical axis: RMSE. The data suggest strong overfitting on our training set.}
 \end{figure}
 
 Following this initial test we tried cross validating our choice of $\lambda$. For each step we chose 60 fMRIs to be our validation set and then used the remaining 240 fMRI's as our training set. We still used holdout set of 60 for testing. The results were largely indistinguishable from performing single step validation, except that one of the $\lambda$ returned was much smaller than the rest. This discrepancy suggests that our current method of choosing a lambda is ill informed, probably due to the homogeneity of our semantic feature data. Currently we believe that it may be necessary to choose a $\lambda$ based on several semantic features, because doing so would resolve the problem of the homogeneity of the semantic features.
+
+
+
+
 
 
 
@@ -107,16 +121,90 @@ For this value of $\lambda$ our results were close to random with only 52\% of t
 We also run our algorithm with the lambdas suggested in the CSE599 homework where the values are (0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4), but again obtained results that are essentially random with 49\% of the words guessed correctly. The root mean square error on our training data set was \~0.25, where as on our test data set it was of the order of 22000. We're currently investigating issues with our lasso implementation, but the poor results obtained thus and the seeming overfitting of our training data are making us consider other models.
 
 
-\section{Future Directions}
-
-The predictive power of our algorithm is not at where we would like it to be. Some ideas for future directions to improve the predictive power are the following :
-
-\subsection{Principal Component Analysis}
-The difficulty with this data set is that our dimensionality is many times higher than the amount of data we have. A possible way to decrease our dimensionality is to use Principal Component Analysis(PCA).  Principal Component Analysis transforms the set of observations that may be correlated into a a new basis where the set of values are linearly uncorrelated. In this new basis underlying relationships between the different voxels in our fMRI scan may be exposed. 
+\section{Discussion}
 
 
-\subsection{Stochastic coordinate descent for lasso}
-Instead of finding the minimum for all coordinates we can find the minimum for a single feature at each iteration and update that weight ~\cite{shalev2011stochastic}. We can stop updating the weights when the weight converges. Implementing this method would sharply decrease our training time, allowing us to prototype new model implementations more quickly.
+\subsection{Semantic Features}
+
+In our study we used 216 semantic features to predict a single word. A question that we could ask is whether using all those semantic features improves the accuracy of our study. The first figure shows that indeed that the use of more semantic features improves our accuracy, with a very steep increase in accuracy with the addition of the first 20 semantic features, and then a slow increase up to about the 120th semantic feature at which point the accuracy fluctuates between 0.75  - 0.8. In order thus to capture as much of the meaning of the word as possible, many semantic features are needed.
+
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\includegraphics[scale=0.5]{accuracyVSnumFeatures.png}
+\end{center}
+\caption{Accuracy versus number of features used}
+\end{figure}
+
+A second question we may ask is whether one semantic feature outperforms or underperforms the others.
+
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\includegraphics[scale=0.5]{rmse_train_test.png}
+\end{center}
+\caption{Root mean square error for each semantic feature on training and test data.}
+\end{figure}
+
+
+
+
+
+
+\subsection{Mistakes}
+
+
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\includegraphics[scale=0.5]{mistaken_word0.png}
+\end{center}
+\caption{RMSE with pca dimensions}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\includegraphics[scale=0.5]{rmse_correct_incorrect_per_semantic_Feature.png}
+\end{center}
+\caption{RMSE with pca dimensions}
+\end{figure}
+
+
+
+\subsection{Predicting words outside the dataset}
+
+
+\subsection{Analysis on the PCA dimensions}
+
+
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\includegraphics[scale=0.5]{rmse_with_pca_dimensions.png}
+\end{center}
+\caption{RMSE with pca dimensions}
+\end{figure}
+
+
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\includegraphics[scale=0.5]{accuracy_2of2.png}
+\end{center}
+\caption{RMSE with pca dimensions}
+\end{figure}
+
+
+
+
+\subsection{Comparison of our method with previous work}
 
 
 \bibliographystyle{unsrt}
