@@ -36,6 +36,47 @@ def pcaData (dimensions):
     return [xtrainPCA,xtestPCA]
 
 
+
+
+
+def nonlinearFeatures (dimensions):
+    [xtrainPCA,xtestPCA] = pcaData(dimensions)
+    n = xtrainPCA.shape[0]
+    dimPCA = xtrainPCA.shape[1]
+    xNonlinear = np.zeros((n,dimPCA + dimPCA*dimPCA/2))
+    xtestNonlinear = np.zeros((xtestPCA.shape[0],dimPCA + dimPCA*dimPCA/2))
+    counter = dimPCA
+    xNonlinear [:,0:dimPCA] = xtrainPCA
+    xtestNonlinear [:,0:dimPCA] = xtestPCA
+    for i in range(dimPCA):
+        for j in range(i+1,dimPCA):
+            xNonlinear[:,counter] = xtrainPCA[:,i] * xtrainPCA[:,j]
+            xtestNonlinear[:,counter] = xtestPCA[:,i] * xtestPCA[:,j]
+            counter +=1
+    num_features = ytrain.shape[1]
+    d = xNonlinear.shape[1]
+    ntotdata = xNonlinear.shape[0]
+    bestw = np.zeros([num_features,d])
+    bestw0 = np.zeros(num_features)
+    accuracy = np.zeros(d)
+    for i in range(num_features):
+        #print ('looking at feature ', i)
+        y = ytrain[:,i].reshape(ntotdata,1)
+        x = xNonlinear[:,:]
+        w = least_squares (x,y)
+        bestw[i,:]  = w.reshape(d)
+    wfile = "w_lse_dim10_nonlinear.mtx"
+    io.mmwrite(wfile, bestw)
+    # to read : bestw = io.mmread ("allwsmtx.mtx")
+    [accuracy] = test_suite.main(bestw,bestw0,wordid_test,wordfeature_std,xtestNonlinear)
+    print(accuracy)
+    [ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
+    rmsetest = rmse_per_semantic_feature (xtestNonlinear,ytest,bestw)
+    rmsetrain = rmse_per_semantic_feature (xNonlinear,ytrain,bestw)
+    rmsetestwrong = rmse_per_semantic_feature (xtestNonlinear,ywrong,bestw)
+    return [accuracy,rmsetrain,rmsetest,rmsetestwrong]
+
+
 # finds the weights after it pcas the data and does least square on data
 # it then returns accuracy on test data on guess out of 2 words
 # and returns rmse on test and training data, and also the on the wrong column of training data.
@@ -129,12 +170,10 @@ def differentPCADimensions ():
         rmsetest_list.append(np.sum(rmsetest)/n_semantic)
         rmsetestwrong_list.append(np.sum(rmsetestwrong)/n_semantic)
         j = j+1
-
     plt.plot(dimension_list,accuracy_list)
     plt.xlabel ("PCA Dimensions")
     plt.ylabel("Accuracy")
     plt.show()
-
     train_line, = plt.plot(dimension_list,rmsetrain_list,  label='Training Data')
     test_line, = plt.plot(dimension_list,rmsetest_list, label='Test Data')
     wrong_test_line, = plt.plot(dimension_list,rmsetestwrong_list, label='Wrong Test Data')
@@ -142,12 +181,10 @@ def differentPCADimensions ():
     plt.ylabel("RMSE")
     plt.legend(handles=[train_line, test_line,wrong_test_line])
     plt.show()
-
     plt.plot(dimension_list,rmsetest_matrix)
     plt.xlabel ("PCA Dimensions")
     plt.ylabel("RMSE")
     plt.show()
-
     dif = rmsetest_matrix[0] - rmsetest_matrix[j-1]
     a = dif < 0  # good semantic features should have a decreasing root mean square error with more pca dimensions
     print ("semantic features that the rmse decreased", a.nonzero())
@@ -164,18 +201,15 @@ def differentPCADimensions ():
 # plots the rmse per semantic feature
 # also the different pca dimensions test
 def testing (w,xtrain,ytrain,xtest,ytest):
-
     # finds rmse for train and test per semantic feature
     rmseTrain = rmse_per_semantic_feature (xtrain,ytrain,w)
     rmseTest = rmse_per_semantic_feature (xtest,ytest,w)
-
     train_line, = plt.plot(rmseTrain,  label='Training Data')
     test_line, = plt.plot(rmseTest, label='Testing Data')
     plt.xlabel ("semantic feature")
     plt.ylabel("RMSE")
     plt.legend(handles=[train_line, test_line])
     plt.show()
-
     # tests effects of different pca dimensions
     #differentPCADimensions ()
 
@@ -188,10 +222,8 @@ def findBadWords ():
     indexes_incorrect_guesses = np.where(guessed_words == False)[0].tolist()
     n = yright.shape[0]
     f = yright.shape[1]
-
     rmsecorrect = np.zeros((n,f))
     rmseincorrect = np.zeros((n,f))
-
     j = 0
     for j in range(len(indexes_incorrect_guesses)):
         i = indexes_incorrect_guesses[j]
@@ -203,19 +235,20 @@ def findBadWords ():
         yincorrect = ywrong[i]
         rmseincorrect[j] = np.sqrt(np.square(yincorrect - ypredict))
         print(correct_word, sum(rmsecorrect[j])/f,incorrect_word,sum(rmseincorrect[j])/f)
-
     correct_line, = plt.plot(rmsecorrect[0],  label='bear')
     incorrect_line, = plt.plot(rmseincorrect[0],  label='airplane')
     plt.legend(handles=[correct_line,incorrect_line])
     plt.xlabel('semantic feature')
     plt.ylabel('RMSE')
     plt.show()
-
     difference_rmse = rmsecorrect - rmseincorrect # if rmsecorrect > rmseincorrect then this is bad
     indexes_bad_rmse = np.where(difference_rmse>0)
     plt.hist(indexes_bad_rmse [1],range(f))
     plt.xlabel('semantic feature')
     plt.ylabel('Counts of Words')
+    plt.show()
+    differences_summed = np.sum (difference_rmse,axis = 0)
+    plt.plot(differences_summed)
     plt.show()
     return [rmsecorrect,rmseincorrect]
 
@@ -233,7 +266,6 @@ def findBadWords ():
 def rmse_per_semantic_feature (x,y,w):
     y_predict = x.dot(w.T)
     n = y_predict.shape[0]
-
     rmse = np.sum(1./n * np.square(y_predict - y),axis = 0) # rmse per semantic feature
     return rmse
 
@@ -241,6 +273,7 @@ def rmse_per_semantic_feature (x,y,w):
 # main function - put here what you want to run!
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
+    nonlinearFeatures (100)
     #[xtrainPCA,xtestPCA] = pcaData (300)
     #[ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
     #w = io.mmread ("w_lse_dim300.mtx")
