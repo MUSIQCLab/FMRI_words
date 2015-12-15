@@ -8,7 +8,7 @@
 %\documentstyle[nips14submit_09,times,art10]{article} % For LaTeX 2.09
 
 \title{Reading Minds : Identifying read words using images of brain activity}
-\subtitle{CSE 546: Final Project Report}
+
 \author{
 Tomasz Sarkedja \\
 Physics Department\\
@@ -39,20 +39,20 @@ Machine learning techniques are often used to decipher brain images experiments 
 
 \section{Introduction}
 
-Humans have always sought to understand the brain better. Functional magnetic resonance imaging (FMRI), which is an imaging procedure that measures brain activity by detecting changes associated with blood flow, has been a vital component in medical diagnosis, but also in improving our understanding of the human brain and its biology. The information in an FMRI scan is complicated, dense, and interpreting it requires analysis of complex, multivariate data[http://www.sciencedirect.com/science/article/pii/S1053811908012263]. With the advent of machine learning it is now possible to find relationships between FMRI scans and human actions or thoughts that were not possible before, and thus proove that the fMRI data contain information about those.
+Humans have always sought to understand the brain better. Functional magnetic resonance imaging (FMRI), which is an imaging procedure that measures brain activity by detecting changes associated with blood flow, has been a vital component in medical diagnosis, but also in improving our understanding of the human brain and its biology. The information in an FMRI scan is complicated, dense, and interpreting it requires analysis of complex, multivariate data\cite{Pereira2009S199}. With the advent of machine learning it is now possible to find relationships between FMRI scans and human actions or thoughts that were not possible before, and thus prove that the fMRI data contain information about those.
 
 In this work we seek to find a relationship between FMRI scans and words. We use 'semantic features', which are properties which we use to characterize words. We use the mappings established between words and semantic features to predict the word given an FMRI. Our data consists of 60 words and their relationship to 216 semantic features. We use 360 FMRI images consisting of 20,000 voxels. Our current model relates each semantic feature separately to the brightness of the voxels. The obtained parameters can then be used to predict the value of each of the semantic features for a given FMRI image, and the predicted semantic features values can be used to identify the word. This method can be used to predict words for which we know semantic features but our model has not be trained on.
 
 
 
 \section{Methods}
-Because FMRI scans are expensive the amount of data one can obtain is limited. This makes training our model difficult because the amount of training data (360) is significantly smaller than the dimensionality of the problem (20,000 voxels). Currently we are using linear regression with L1 regularization (Lasso). We expect a strong reduction in the bias of our trained parameters over non-regularized linear regression. The Lasso is used to predict values of 218 semantic features from our FMRI's. The semantic feature values for the training data are obtained via questionarre with responses given ratings between 1-5 by the test subject. These data are then centered and normalized.
+Because FMRI scans are expensive the amount of data one can obtain is limited. This makes training our model difficult because the amount of training data (360) is significantly smaller than the dimensionality of the problem (20,000 voxels). Currently we are using linear regression with L1 regularization (Lasso). We expect a strong reduction in the bias of our trained parameters over non-regularized linear regression. The Lasso is used to predict values of 218 semantic features from our FMRI's. The semantic feature values for the training data are obtained via questionnaire with responses given ratings between 1-5 by the test subject. These data are then centered and normalized.
 
 
 
 \subsection{Lasso}
 
-To obtain the parameters that relate the value of a semantic feature to the voxels in the brain images we use linear regression with Lasso. Lasso, as described in Tibshirani (1996) [1], constrains the L1 norm, thereby shrinking some weights to exactly zero. This technique therefore obtains sparse solutions, which can be useful in the case that the amount of data is much smaller than the dimensionality of the problem (as in this case), or if we expect that few voxels are related to each word. 
+To obtain the parameters that relate the value of a semantic feature to the voxels in the brain images we use linear regression with Lasso. Lasso, as described in Tibshirani (1996) ~\cite{lasso}, constrains the L1 norm, thereby shrinking some weights to exactly zero. This technique therefore obtains sparse solutions, which can be useful in the case that the amount of data is much smaller than the dimensionality of the problem (as in this case), or if we expect that few voxels are related to each word. 
 
 To estimate the weights with Lasso we minimize the following function :
 
@@ -66,7 +66,7 @@ w_{Lasso} = argmin \{|| Y - Xw ||^2 + \lambda|w|\}
 
 
 \subsection{Obtaining the best lambda}
-In order to choose a $\lambda$ suitable for our dataset we used pathwise optimization [2]. In pathwise optimazion we start with a high value for  $\lambda$ and solve the optimization for a decreasing series of lambdas using the previous results for our weights. We finally choose the $\lambda$ with the smallest root mean square error on a validation set, which is a subset partitioned from our training data. Since the semantic features consist of similar realtionships, we attempted to choose the best $\lambda$ for our dataset using one of the semantic features. 250 FMRI images were used to train our dataset and 50 were used as validation data. We started from maximum lambda calculated as $2 * max (|X^T.(y - <y>)|)$ and decreased the $\lambda$ by multiplying by 0.8 in each iteration. Choosing the lambda using this method on different semantic features obtained similar values for all features, but larger values than expected (~134). In figure 1, we shown the root mean square error on the training data and validation data versus different $\lambda$. This large value of $\lambda$ creates a very sparse solution and sets most of the features to 0. The reason behind the large value of lambda may be due to the nature of the data, or the large dimensionality compared to the amount of training data we have.
+In order to choose a $\lambda$ suitable for our dataset we used pathwise optimization ~\cite{friedman2010regularization}. In pathwise optimization we start with a high value for  $\lambda$ and solve the optimization for a decreasing series of lambdas using the previous results for our weights. We finally choose the $\lambda$ with the smallest root mean square error on a validation set, which is a subset partitioned from our training data. Since the semantic features consist of similar relationships, we attempted to choose the best $\lambda$ for our dataset using one of the semantic features. 250 FMRI images were used to train our dataset and 50 were used as validation data. We started from maximum lambda calculated as $2 * max (|X^T.(y - <y>)|)$ and decreased the $\lambda$ by multiplying by 0.8 in each iteration. Choosing the lambda using this method on different semantic features obtained similar values for all features, but larger values than expected (~134). In figure 1, we shown the root mean square error on the training data and validation data versus different $\lambda$. This large value of $\lambda$ creates a very sparse solution and sets most of the features to 0. The reason behind the large value of lambda may be due to the nature of the data, or the large dimensionality compared to the amount of training data we have.
 
 
 
@@ -86,7 +86,7 @@ Following this initial test we tried cross validating our choice of $\lambda$. F
 
 \subsection{Results on the test data}
 
-The task for our model is simplified somewhat because the model need only choose between two words given an FMRI. Using a $\lambda$ of 134 as a starting point, obtained from training on the first semantic feature, we trained each of the other semantic feature for $\lambda$ 134 +/- 5 and chpose the $\lambda$ value that had the lowest RMSE on the validation set. With the obtained weights we predicted the values for the 216 semantic features for each of the test cases. The predicted semantic feature values were then compared to the semantic features of the two given words. The word for which the semantic features have the smallest distance from the predicted semantic features was chosen. 
+The task for our model is simplified somewhat because the model need only choose between two words given an FMRI. Using a $\lambda$ of 134 as a starting point, obtained from training on the first semantic feature, we trained each of the other semantic feature for $\lambda$ 134 +/- 5 and choose the $\lambda$ value that had the lowest RMSE on the validation set. With the obtained weights we predicted the values for the 216 semantic features for each of the test cases. The predicted semantic feature values were then compared to the semantic features of the two given words. The word for which the semantic features have the smallest distance from the predicted semantic features was chosen. 
 
 For this value of $\lambda$ our results were close to random with only 52\% of the words guessed correctly (31 out of 60), indicating that the weights predicted are not satisfactory for the prediction of the semantic features.
 
@@ -102,20 +102,14 @@ The difficulty with this data set is that our dimensionality is many times highe
 
 
 \subsection{Stochastic coordinate descent for lasso}
-Instead of finding the minimum for all coordinates we can find the minimum for a single feature at each iteration and update that weight [3]. We can stop updating the weights when the weight converges. Implementing this method would sharply decrease our training time, allowing us to prototype new model implementations more quickly.
+Instead of finding the minimum for all coordinates we can find the minimum for a single feature at each iteration and update that weight ~\cite{shalev2011stochastic}. We can stop updating the weights when the weight converges. Implementing this method would sharply decrease our training time, allowing us to prototype new model implementations more quickly.
 
 
 \subsubsection*{References}
 
-\small{
-%original lasso paper
-[1] Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. J. Royal. Statist. Soc B., Vol. 58, No. 1, pages 267-288
 
-% pathwise optimization
-[2] Friedman, J., Hastie, T., \& Tibshirani, R. (2010). Regularization paths for generalized linear models via coordinate descent. Journal of statistical software, 33(1), 1.
 
-% stoch coordinate descent
-[3] Shalev-Shwartz, S., \& Tewari, A. (2011). Stochastic methods for l 1-regularized loss minimization. The Journal of Machine Learning Research, 12, 1865-1892.
-}
+\bibliographystyle{unsrt}
+\bibliography{referencesFMRI}
 
 \end{document}
