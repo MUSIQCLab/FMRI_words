@@ -1,5 +1,8 @@
-__author__ = 'Stella'
-
+'''
+Different functions for the final project of CSE546
+for predicting words from fMRI images
+Authors: Stella Stylianidou, Tomasz Sakrejda
+'''
 import scipy.io as io
 import scipy.stats as stats
 import numpy as np
@@ -7,12 +10,6 @@ from fmridataloader import *
 from sklearn.decomposition import PCA
 import test_suite
 import matplotlib.pyplot as plt
-
-# things to do
-# square loss as a function of semantic features, no of pca dimensions
-# ranking of words instead of guessing between two wrods - likelihood
-
-
 
 
 # least squares calculation using the pseudo - inverse
@@ -22,17 +19,24 @@ def least_squares (X,Y):
     return w_least_squares
 
 
-# runs pca on data given dimension returns pca transformed data
-# for training and test data
 def pcaData (dimensions, training_data, testing_data):
+    '''
+    Finds the principal components of the training for given
+    amount of dimensions and returns the transformed training
+    and testing data.
+    :param dimensions: amount of principal components to keep
+    :param training_data: data for model to be trained on
+    :param testing_data: data for model to be tested on
+    :return: xtrainPCA : transformed training data ,xtestPCA : tranformed testing data
+    '''
     pca = PCA(n_components=dimensions)
     pca.fit(training_data)
-    #print(pca.explained_variance_ratio_)
-    #variance  = pca.explained_variance_ratio_
-    #plt.plot(variance)
-    #plt.show()
     xtrainPCA= pca.transform(training_data)
     xtestPCA = pca.transform (testing_data)
+    print(pca.explained_variance_ratio_)
+    variance  = pca.explained_variance_ratio_ # plots the variance of the dimensions used
+    plt.plot(variance)
+    plt.show()
     return [xtrainPCA,xtestPCA]
 
 
@@ -40,7 +44,14 @@ def pcaData (dimensions, training_data, testing_data):
 
 
 def nonlinearFeatures (dimensions):
-    [xtrainPCA,xtestPCA] = pcaData(dimensions)
+    '''
+    Applies PCA for the given amount of dimensions. It then multiplies
+    each principal component with each other principal component to create
+    non linear features and finds the least squares solution.
+    :param dimensions: amount of principal components to keep
+    :return: [accuracy,rmsetrain,rmsetest,rmsetestwrong]
+    '''
+    [xtrainPCA,xtestPCA] = pcaData(300, fmri_train, fmri_train)
     n = xtrainPCA.shape[0]
     dimPCA = xtrainPCA.shape[1]
     xNonlinear = np.zeros((n,dimPCA + dimPCA*dimPCA/2))
@@ -60,14 +71,12 @@ def nonlinearFeatures (dimensions):
     bestw0 = np.zeros(num_features)
     accuracy = np.zeros(d)
     for i in range(num_features):
-        #print ('looking at feature ', i)
         y = ytrain[:,i].reshape(ntotdata,1)
         x = xNonlinear[:,:]
         w = least_squares (x,y)
         bestw[i,:]  = w.reshape(d)
-    wfile = "w_lse_dim10_nonlinear.mtx"
+    wfile = "w_lse_nonlinear.mtx"
     io.mmwrite(wfile, bestw)
-    # to read : bestw = io.mmread ("allwsmtx.mtx")
     [accuracy] = test_suite.main(bestw,bestw0,wordid_test,wordfeature_std,xtestNonlinear)
     print(accuracy)
     [ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
@@ -77,10 +86,22 @@ def nonlinearFeatures (dimensions):
     return [accuracy,rmsetrain,rmsetest,rmsetestwrong]
 
 
-# finds the weights after it pcas the data and does least square on data
-# it then returns accuracy on test data on guess out of 2 words
-# and returns rmse on test and training data, and also the on the wrong column of training data.
-def findw_PCA_LSE (dimensions, train_data,test_data,wordid_test, ytrain, wfile = "w_lse_dim299.mtx"):
+
+def findw_PCA_LSE (dimensions, train_data,test_data, wordid_test, ytrain, wfile = "w_lse_dim299.mtx"):
+    '''
+    Find number of dimensions given principal components of the data
+    and using that it solves least squares to obtain the weights for each semantic
+    feature. Using the weights obtained it calculates the predicted semantic features
+    on the test data set and returns the accuracy on a guess out of 2 words. It also
+    returnsrmse on test and training data, and on the wrong column of training data.
+    :param dimensions: number of pca components
+    :param train_data: training data
+    :param test_data: test data
+    :param wordid_test: ids of the words in the test data set
+    :param ytrain: semantic features values for training data
+    :param wfile: name of file where w's will be written
+    :return:
+    '''
     [xtrainPCA,xtestPCA] = pcaData(dimensions, train_data, test_data)
     num_features = ytrain.shape[1]
     d = xtrainPCA.shape[1]
@@ -89,13 +110,12 @@ def findw_PCA_LSE (dimensions, train_data,test_data,wordid_test, ytrain, wfile =
     bestw0 = np.zeros(num_features)
     accuracy = np.zeros(d)
     for i in range(num_features):
-        #print ('looking at feature ', i)
+        print ('looking at feature ', i)
         y = ytrain[:,i].reshape(ntotdata,1)
         x = xtrainPCA[:,:]
         w = least_squares (x,y)
         bestw[i,:]  = w.reshape(dimensions)  
     io.mmwrite(wfile, bestw)
-    # to read : bestw = io.mmread ("allwsmtx.mtx")
     [accuracy] = test_suite.main(bestw,bestw0,wordid_test,wordfeature_std,xtestPCA)
     print(accuracy)
     [ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
@@ -105,12 +125,17 @@ def findw_PCA_LSE (dimensions, train_data,test_data,wordid_test, ytrain, wfile =
     return [accuracy,rmsetrain,rmsetest,rmsetestwrong]
 
 
-# for each x datapoint it goes through all the words we have
-# and calculates the rmse of x.w with the y of each word
-# it then ranks the words according to the rmse
-# it finds the rank of the 'true word' and puts it in a list for all datapoints
-# at the end it prints the rank
 def word_ranking (x,w,wordid_true):
+    '''
+    for each x datapoint (fmri image) it calculated the predicted
+    semantic features value. It then finds the rmse of the predicted semantic
+    features value and each other word in the data set (y_word - x.w) ^ 2.
+    Each word is ranked according to this value.
+    :param x: voxels values (or PCAed x datapoint)
+    :param w: weight of our model
+    :param wordid_true: id of the correct word
+    :return: ranks
+    '''
     ntest = x.shape[0]
     num_words = wordfeature_std.shape[0]
     ranks = []
@@ -120,8 +145,8 @@ def word_ranking (x,w,wordid_true):
         rmse_per_word = []
         for j in range (num_words): # go through every single word
             y = wordfeature_std [j] #semantic features for jth word.
-            rmse = rmse_per_semantic_feature (x_current,y,w) #always 0?????
-            rmse_per_word.append(rmse) # it is only one datapoint so it is already summed..
+            rmse = rmse_per_semantic_feature (x_current,y,w)
+            rmse_per_word.append(rmse)
         sorted_indexes = stats.rankdata(rmse_per_word) #note argsort returns indices that would sort array
         correct_word = wordid_true[i] - 1
         rank_of_word = sorted_indexes [correct_word]
@@ -129,10 +154,14 @@ def word_ranking (x,w,wordid_true):
     print(ranks)
     return ranks
     
-#Temporary notes for word_ranking:
-#maybe we need to check if it is terrible at ranking some particular words? regardless of fmri?
 
 def two_class_rankings(x,w,wordid_test):
+    '''
+    :param x:
+    :param w:
+    :param wordid_test:
+    :return:
+    '''
     wd_true = wordid_test[:,0]
     wordid_false = wordid_test[:,1]
     true_ranks = word_ranking(x,w,wd_true)
@@ -146,11 +175,12 @@ def two_class_rankings(x,w,wordid_test):
     return [true_ranks, false_ranks, true_false_words]
 
 
-# it goes through different pca dimensions
-# calculates the w and then accuracy and rmse for test and training data
-# it makes different plots about all these things
-
 def differentPCADimensions ():
+    '''
+    It goes through different pca dimensions and calculates the w
+    accuracy and rmse for test and training data. It plots rmse and accuracy
+    versus pca dimensions.
+    '''
     dimension_list = list(range (1,300,10))
     ndimensions = len(dimension_list)
     accuracy_list = []
@@ -163,7 +193,6 @@ def differentPCADimensions ():
     for i in dimension_list:
         print(i) 
         [accuracy,rmsetrain,rmsetest,rmsetestwrong] = findw_PCA_LSE (i, fmri_train, fmri_test, wordid_test, ytrain )
-        #use global values above... Not great, but I don't want to put arguments here too?
         accuracy_list.append(accuracy)
         rmsetest_matrix[j] = rmsetest
         rmsetrain_list.append(np.sum(rmsetrain)/n_semantic)
@@ -194,27 +223,33 @@ def differentPCADimensions ():
     bad_semantic_features = bad_semantic_feature[0].tolist()
 
 
-
-
-
-# runs all the testing things
-# plots the rmse per semantic feature
-# also the different pca dimensions test
 def testing (w,xtrain,ytrain,xtest,ytest):
-    # finds rmse for train and test per semantic feature
+    '''
+    Runs the different testing functions we have
+    :param w: weights
+    :param xtrain: training data
+    :param ytrain: target training data
+    :param xtest: test data
+    :param ytest: target test data
+    '''
     rmseTrain = rmse_per_semantic_feature (xtrain,ytrain,w)
     rmseTest = rmse_per_semantic_feature (xtest,ytest,w)
     train_line, = plt.plot(rmseTrain,  label='Training Data')
     test_line, = plt.plot(rmseTest, label='Testing Data')
-    plt.xlabel ("semantic feature")
+    plt.xlabel ("semantic feature") # rmse per semantic feature
     plt.ylabel("RMSE")
     plt.legend(handles=[train_line, test_line])
     plt.show()
-    # tests effects of different pca dimensions
-    #differentPCADimensions ()
+    differentPCADimensions ()
 
 
 def findBadWords ():
+    '''
+    Plots different information about the words that were incorrectly guessed
+    such as the semantic features rmse's and counts of words versus the semantic
+    feature at which they didn't perform well
+    :return: [rmsecorrect,rmseincorrect]
+    '''
     w = io.mmread ("w_lse_dim299.mtx")
     [xtrainPCA,xtestPCA] = pcaData (299, fmri_train, fmri_test)
     [yright,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
@@ -253,17 +288,14 @@ def findBadWords ():
     return [rmsecorrect,rmseincorrect]
 
 
-
-
-
-
-# Root mean square error per semantic feature
-# Calculates the predicted y given x and w and then subtracts
-# from the true y, and sums up the squares of the differences, dividing
-# by the number of datapoints
-# probably need to take the square root of this?
-
 def rmse_per_semantic_feature (x,y,w):
+    '''
+    Root mean square error per semantic feature
+    :param x: data
+    :param y: target values
+    :param w: weights
+    :return: root mean square error
+    '''
     y_predict = x.dot(w.T)
     n = y_predict.shape[0]
     rmse = np.sum(1./n * np.square(y_predict - y),axis = 0) # rmse per semantic feature
@@ -271,6 +303,13 @@ def rmse_per_semantic_feature (x,y,w):
 
 
 def drop_10_words(fmri_train,wordid_train, ytrain):
+    '''
+    Drops 10 words and trains the model on the rest of the words
+    :param fmri_train: training data set
+    :param wordid_train: word id training data set
+    :param ytrain: training target values
+    :return: short_fmri_train, short_wordid_train, short_ytrain
+    '''
     words_to_keep = 20
     num_train_words = 5 * words_to_keep
     short_wordid_train = []
@@ -292,20 +331,9 @@ def drop_10_words(fmri_train,wordid_train, ytrain):
     return short_fmri_train, short_wordid_train, short_ytrain
 
 
-# main function - put here what you want to run!
 def main():
     print('hello from fmri starter type run () or findlambda_crossvalidation()')
-    nonlinearFeatures (100)
-    #[xtrainPCA,xtestPCA] = pcaData (300)
-    #[xtrainPCA,xtestPCA] = pcaData (300, fmri_train, fmri_train)
-    #[ytest,ywrong] = test_suite.prepareData (wordid_test,wordfeature_std)
-    #w = io.mmread ("w_lse_dim300.mtx")
-    #testing(w,xtrainPCA,ytrain,xtestPCA,ytest)
-    #word_ranking (xtrainPCA,w,wordid_train)
-    #word_ranking (xtestPCA,w,wordid_test)
-
-
-
+    nonlinearFeatures (10)
 
 
 if __name__ == '__main__':
