@@ -1,7 +1,7 @@
 '''
 Different functions for the final project of CSE546
 for predicting words from fMRI images
-Authors: Tomasz Sakrejda, Stella Stylianidou
+Authors: Stella Stylianidou, Tomasz sakrejda
 '''
 import scipy.io as io
 import scipy.stats as stats
