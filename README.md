@@ -1,8 +1,16 @@
 # fmri
 
 
+Here, we use machine learning techniques to replicate the analysis in a paper about
+an experiment where subjects brains were scanned with fMRI while they thought of words.
+We achieve the same accuracy for predicting words from fMRI's as the original paper's model,
+and further, we can interpret model parameters to replicate
+their conclusions regarding the human brain. We include our initial attempt using lasso, trained
+via stochastic gradient descent with exponentially decreasing step sizes, along with our final model,
+which performs a linear fit to principal components of the data set. Both models predict 218
+semantic features to expand the effecetive data set. The model's chosen word is then chosen by
+manhattan-distance measured distance in the 218 dimensional space of predictions. 
 
-Taken from the course website:
 "Brain scans were taken of a subject in the process of a word reading task. We want to be able
 to predict what word the participant is reading based off of the activation patterns in their
 brain. To do this, we have 218 semantic features for each word in our dictionary (where each feature
